@@ -10,13 +10,20 @@ A very lightweight Javascript-Bootstrap table generator with server-side paging,
 ```
 <script>
     $(document).ready(function() {
-    var grid = new VerySimpleTable();
-    grid.initalise('http://hostname/api/pathToCall', 'idOfElement', ['col1', 'col2', 'col3']);
+        var grid = new VerySimpleTable();
+        grid.initalise({
+            callUrl: 'http://hostname/json/pathToCall',
+            editUrl: '#',
+            deleteUrl: '#',
+            container: 'grid',
+            columns: ['col1', 'col2', 'col3'],
+            postData: {}
+        });
     });
 </script>
 ```
 
-Note that the first argument passes to initialise() is a URL that returns JSON when POSTed to, the second is the ID of the element that we created earlier and the third is an array of column names. The column names should used underscored_names.
+Note that the first argument passes to initialise() is a URL that returns JSON when POSTed to. The second and third are  optional URLs to edit/delete the entity (the first column will be passed as a parameter). The fourth is the ID of the element that we created earlier and the third is an array of column names. The column names should used underscored_names. The final parameter is an object that will be JSON encoded and sent as the POST payload.
 
 (3) Ensure that the URL passed to the script returns JSON in the following format when POSTed to:
   
