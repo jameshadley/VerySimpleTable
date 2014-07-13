@@ -14,16 +14,19 @@ var VerySimple = {};
  * @param container The ID of the element to populate
  * @param columns An array containing a list of columns to draw
  */
-VerySimpleTable.prototype.initalise = function(callUrl, container, columns) {
+VerySimpleTable.prototype.initalise = function(input) {
     VerySimple.skip      = 0;
     VerySimple.take      = 10;
     VerySimple.sortBy    = 'id';
     VerySimple.direction = 'ASC';
     VerySimple.filter    = '';
     VerySimple.takeVals  = [10, 25, 50, 100, 200];
-    VerySimple.callUrl   = callUrl;
-    VerySimple.container = container;
-    VerySimple.columns   = columns;
+    VerySimple.callUrl   = input.callUrl;
+    VerySimple.editUrl   = input.editUrl;
+    VerySimple.deleteUrl = input.deleteUrl;
+    VerySimple.container = input.container;
+    VerySimple.columns   = input.columns;
+    VerySimple.postData  = input.postData;
 
     VerySimpleTable.redraw();
 };
@@ -38,61 +41,83 @@ VerySimpleTable.setField = function(field, value) {
 
 VerySimpleTable.redraw = function() {
     var url = VerySimple.callUrl+'?skip='+VerySimple.skip+'&take='+VerySimple.take+'&sortBy='+VerySimple.sortBy+'&direction='+VerySimple.direction+'&filter='+VerySimple.filter;
-    $.post(url, function(data) {
-        // Error handing
-        if(data.status == 'error') alert(data.data);
-        else {
-            // Filter and take
-            var htmlToInsert = '<div class="row"><div class="col-sm-3"><input type="text" class="form-control" placeholder="Filter" onchange="VerySimpleTable.setField(\'filter\', this.value)" value="'+VerySimple.filter+'"></div><div class="col-sm-3 col-sm-offset-6" align="right">Page Size: <select onchange="VerySimpleTable.setField(\'take\', this.value)">';
-            $.each(VerySimple.takeVals, function(index) {
-                if(VerySimple.take == VerySimple['takeVals'][index]) {
-                    htmlToInsert += '<option value="'+VerySimple['takeVals'][index]+'" selected="selected">'+VerySimple['takeVals'][index]+'</option>';
-                } else {
-                    htmlToInsert += '<option value="'+VerySimple['takeVals'][index]+'">'+VerySimple['takeVals'][index]+'</option>';
+    $.ajax({
+        type: 'POST',
+        url: url,
+        dataType: 'json',
+        contentType: "application/json",
+        data: JSON.stringify(VerySimple.postData),
+        error: function () {
+            alert("Unexpected error")
+        },
+        success: function (data) {
+            // Error handing
+            if (data.status == 'error') alert(data.data);
+            else {
+                // Filter and take
+                var htmlToInsert = '<div class="row"><div class="col-sm-3"><input type="text" class="form-control" placeholder="Filter" onchange="VerySimpleTable.setField(\'filter\', this.value)" value="' + VerySimple.filter + '"></div><div class="col-sm-3 col-sm-offset-6" align="right">Page Size: <select onchange="VerySimpleTable.setField(\'take\', this.value)">';
+                $.each(VerySimple.takeVals, function (index) {
+                    if (VerySimple.take == VerySimple['takeVals'][index]) {
+                        htmlToInsert += '<option value="' + VerySimple['takeVals'][index] + '" selected="selected">' + VerySimple['takeVals'][index] + '</option>';
+                    } else {
+                        htmlToInsert += '<option value="' + VerySimple['takeVals'][index] + '">' + VerySimple['takeVals'][index] + '</option>';
+                    }
+                })
+                htmlToInsert += '</select></div>';
+
+                // Create header
+                htmlToInsert += '<table class="table"><thead>';
+
+                // Create headings
+                $.each(VerySimple.columns, function (index) {
+                    htmlToInsert += '<th style="text-transform: capitalize"><a style="cursor: pointer" onclick="VerySimpleTable.setField(\'sortBy\', \'' + VerySimple.columns[index] + '\')">' + VerySimple.columns[index].split('_').join(' ')+'</a></th>';
+                });
+
+                // Edit and delete
+                if(VerySimple.editUrl != '' || VerySimple.deleteUrl != '') {
+                    htmlToInsert += '<th>&nbsp;</th>';
                 }
-            })
-            htmlToInsert += '</select></div>';
 
-            // Create header
-            htmlToInsert += '<table class="table"><thead>';
+                htmlToInsert += '</thead><tbody>'
 
-            // Create headings
-            $.each(VerySimple.columns, function(index) {
-                htmlToInsert += '<th style="text-transform: capitalize"><a style="cursor: pointer" onclick="VerySimpleTable.setField(\'sortBy\', \''+VerySimple.columns[index]+'\')">'+VerySimple.columns[index].split('_').join(' ');+'</a></th>';
-            });
+                // Iterate over rows
+                $.each(data.data, function (index) {
+                    // Start row
+                    htmlToInsert += '<tr>';
 
-            htmlToInsert += '</thead><tbody>'
+                    // Iterate over data items
+                    var tableRow = {};
+                    $.each(data['data'][index], function (field, value) {
+                        if ($.inArray(field, VerySimple.columns) !== false) tableRow[field] = value;
+                    });
 
-            // Iterate over rows
-            $.each(data.data, function (index) {
-                // Start row
-                htmlToInsert += '<tr>';
+                    // Iterate over columns
+                    $.each(VerySimple.columns, function (column) {
+                        htmlToInsert += '<td>' + tableRow[VerySimple.columns[column]] + '</td>';
+                    });
 
-                // Iterate over data items
-                var tableRow = {};
-                $.each(data['data'][index], function (field, value) {
-                    if($.inArray(field, VerySimple.columns) !== false) tableRow[field] = value;
+                    if(VerySimple.editUrl != '' || VerySimple.deleteUrl != '') {
+                        htmlToInsert += '<td>';
+                        if(VerySimple.editUrl != '') htmlToInsert += '<a class="btn btn-info" href="'+VerySimple.editUrl+'">Edit</a>';
+                        if(VerySimple.deleteUrl != '') htmlToInsert += '<a class="btn btn-danger" href="'+VerySimple.deleteUrl+'">Delete</a>';
+                        htmlToInsert += '</td>'
+                    }
+
+                    // End row
+                    htmlToInsert += '</tr>';
                 });
 
-                // Iterate over columns
-                $.each(VerySimple.columns, function(column) {
-                    htmlToInsert += '<td>'+tableRow[VerySimple.columns[column]]+'</td>';
-                });
+                // Create footer
+                htmlToInsert += '</tbody></table>';
 
-                // End row
-                htmlToInsert += '</tr>';
-            });
+                // Create pagination
+                var pages = Math.ceil(data['count'] / VerySimple.take);
+                htmlToInsert += '<ul class="pagination">';
+                for (var i = 0; i < pages; i++) htmlToInsert += '<li><a onclick="VerySimpleTable.setField(\'skip\', ' + i * VerySimple.take + ')" style="cursor: pointer">' + (i + 1) + '</a></li>';
+                htmlToInsert += '</ul>';
 
-            // Create footer
-            htmlToInsert += '</tbody></table>';
-
-            // Create pagination
-            var pages = Math.ceil(data['count'] / VerySimple.take);
-            htmlToInsert += '<ul class="pagination">';
-            for(var i=0; i<pages; i++) htmlToInsert += '<li><a onclick="VerySimpleTable.setField(\'skip\', '+i*VerySimple.take+')" style="cursor: pointer">'+(i+1)+'</a></li>';
-            htmlToInsert += '</ul>';
-
-            $('#'+VerySimple.container).html(htmlToInsert);
+                $('#' + VerySimple.container).html(htmlToInsert);
+            }
         }
     });
 }
