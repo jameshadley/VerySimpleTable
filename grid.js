@@ -98,8 +98,8 @@ VerySimpleTable.redraw = function() {
 
                     if(VerySimple.editUrl != '' || VerySimple.deleteUrl != '') {
                         htmlToInsert += '<td>';
-                        if(VerySimple.editUrl != '') htmlToInsert += '<a class="btn btn-info" href="'+VerySimple.editUrl+'">Edit</a>';
-                        if(VerySimple.deleteUrl != '') htmlToInsert += '<a class="btn btn-danger" href="'+VerySimple.deleteUrl+'">Delete</a>';
+                        if(VerySimple.editUrl != '') htmlToInsert += '<a class="btn btn-info" href="'+VerySimple.editUrl+'?'+VerySimple.columns[0]+'='+tableRow[VerySimple.columns[0]]+'">Edit</a>';
+                        if(VerySimple.deleteUrl != '') htmlToInsert += '<a class="btn btn-danger" href="'+VerySimple.deleteUrl+'?'+VerySimple.columns[0]+'='+tableRow[VerySimple.columns[0]]+'">Delete</a>';
                         htmlToInsert += '</td>'
                     }
 
